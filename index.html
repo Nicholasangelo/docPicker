@@ -1,4 +1,3 @@
-
 <!doctype html>
 <html lang="en">
   <head>
@@ -74,7 +73,7 @@
 
     <script src="https://unpkg.com/@bloomreach/ui-extension@14.4.0/dist/ui-extension.min.js"></script>
     <script type="text/javascript">
-      () => {
+      (function() {
       const gallery = document.querySelector('.gallery');
       const toggleGallery = () => gallery.classList.contains('-hidden') ? gallery.classList.remove('-hidden') : galler.classList.add('-hidden');
 
@@ -136,7 +135,7 @@
       //    console.log('- error code: ', error.code);
       //  };
      // };
-      }();
+      })();
     </script>
 
   </body>
