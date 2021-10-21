@@ -1,3 +1,4 @@
+
 <!doctype html>
 <html lang="en">
   <head>
@@ -71,8 +72,9 @@
         <div class="selected-assets"></div>
     </div>
 
+    <script src="https://unpkg.com/@bloomreach/ui-extension@14.4.0/dist/ui-extension.min.js"></script>
     <script type="text/javascript">
-
+      () => {
       const gallery = document.querySelector('.gallery');
       const toggleGallery = () => gallery.classList.contains('-hidden') ? gallery.classList.remove('-hidden') : galler.classList.add('-hidden');
 
@@ -106,8 +108,7 @@
         })
         }
       }
-      toggleDialog();
-      createGalleryView();
+
       async function init() {
         try {
         ui = await UiExtension.register();
@@ -120,7 +121,7 @@
         }
       }
 
-
+      document.addEventListener('DOMContentLoaded', init);
       //document.addEventListener('DOMContentLoaded', async () => {
       //  try {
       //    const ui = await UiExtension.register();
@@ -135,8 +136,8 @@
       //    console.log('- error code: ', error.code);
       //  };
      // };
+      }();
     </script>
 
   </body>
 </html>
-
