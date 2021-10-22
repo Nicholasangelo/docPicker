@@ -1,4 +1,4 @@
 # docPicker
-inteded to test openui integratin in Bloomreach
+inteded to test openui integration in Bloomreach
 
 available to view @ nicholasangelo.github.io/docPicker
