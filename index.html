@@ -73,10 +73,15 @@
 
     <script src="https://unpkg.com/@bloomreach/ui-extension@14.4.0/dist/ui-extension.min.js"></script>
     <script type="text/javascript">
-      (function() {
+      (function(ui, mode) {
       const gallery = document.querySelector('.gallery');
       const toggleGallery = () => gallery.classList.contains('-hidden') ? gallery.classList.remove('-hidden') : gallery.classList.add('-hidden');
-
+      const ImageActions = {
+        Added: 'added',
+        Removed: 'removed',
+        None: 'none',
+      };
+        
       const openDialog = async () => {
         try {
           const dialogOptions = {
@@ -97,6 +102,15 @@
         }
       }
 
+      const deserialize = (value) => {
+        return (value && JSON.parse(value)) || '';
+      }
+      
+      const serialize = (value) => {
+        return value.length ? JSON.stringify(value) : '';
+      }
+      
+      
       const cancelSelect = async () => {
         await ui.field.setValue(null);
       }
@@ -132,7 +146,7 @@
       }
 
         const updatePreview = () => {
-        const previewBox = document,querySelector('.preview-image');
+        const previewBox = document,querySelector('.selected-assets');
           previewBox.innerHTML = '';
 
           const image = deserialize(await ui.document.field.getValue());
