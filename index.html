@@ -113,7 +113,7 @@
         ui = await UiExtension.register();
           ({ mode } = ui.document.get());
           toggleDialog();
-          //createGaleryView();
+          createGalleryView();
         } catch(error) {
           console.error('failed to register extension', error.message);
           console.error('-error code', error.code);
