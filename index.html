@@ -77,12 +77,37 @@
       const gallery = document.querySelector('.gallery');
       const toggleGallery = () => gallery.classList.contains('-hidden') ? gallery.classList.remove('-hidden') : galler.classList.add('-hidden');
 
+      const openDialog = async () => {
+        try {
+          const dialogOptions = {
+            title: dialogConfig.title,
+            url: './dialog.html',
+          };
+
+          const selected = await document.ui.dialog.open(dialogOptions);
+
+          if (selected) {
+            await document.ui.field.setValue(JSON.stringify(selected));
+
+            //setState((state) => ({ ...state, data: selected }));
+          }
+        } catch (err) {
+          if (err.code === 'DialogCanceled') return;
+          console.error('Error after opening dialog ', err.code, err.message);
+        }
+      }
+
+      const cancelSelect = async () => {
+        await document.ui.field.setValue(null);
+      }
+
       const toggleDialog = () => {
         const toggleBtn = document.querySelector('#toggle-dialog');
         toggleBtn.addEventListener('click', (e) => {
           e.preventDefault();
-          toggleBtn.style.display = 'none';
-          gallery.classList.remove('-hidden')
+          openDialog();
+      //    toggleBtn.style.display = 'none';
+      //    gallery.classList.remove('-hidden')
         })
       }
 
