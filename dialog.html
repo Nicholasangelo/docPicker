@@ -1,0 +1,116 @@
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>File Picker Stub</title>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <script type="text/javascript" src="https://unpkg.com/@bloomreach/ui-extension@14.2.1/dist/ui-extension.min.js"></script>
+
+    <style>
+      .container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+      .row {
+        display: flex;
+        flex-direction: row;
+      }
+      .asset-list {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+      .asset-list div {
+        padding: 6px;
+        transition: .5s;
+        filter: drop-shadow(0px 0px 0px gray);
+        overflow: hidden;
+      }
+      .asset-list div:hover {
+        transition: .5s;
+        filter: drop-shadow(0px 0px 15px darkgray);
+        transform: scale(0.9);
+        cursor: pointer;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container">
+      <div class="row">
+        <div class="col-md-6 col-md-offset-3">
+          <h1> PICKER </h1>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-6 col-md-offset-3">
+          <h2> Menu </h2>
+        </div>
+      </div>
+      <div class="row">
+        <section>
+          <div class="asset-list">
+
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <script src="https://unpkg.com/@bloomreach/ui-extension@14.4.0/dist/ui-extension.min.js"></script>
+    <script type="text/javascript">
+      (function() {
+
+      const createGalleryView = () => {
+        fetch('https://api.unsplash.com/photos?client_id=d3OVNNPZ5qCwRx4FNLivfnuODMLoka9LZ7o0jNCpVjM')
+          .then(response => {
+            return response.json();
+          })
+          .then(data => {
+            data.forEach((d, i) => {
+              if (i < 10) {
+                const imageContainer = document.querySelector('.asset-list');
+                const imageDiv = document.createElement('div');
+                imageDiv.dataset.id = d.id;
+                imageDiv.innerHTML = `<img height='300'  width='300' src=${d.urls.thumb} />`
+                imageContainer.appendChild(imageDiv);
+              } else {
+                return;
+              };
+            })
+          })
+        }
+
+      async function init() {
+        try {
+        ui = await UiExtension.register();
+          ({ mode } = ui.document.get());
+          createGalleryView();
+        } catch(error) {
+          console.error('failed to register extension', error.message);
+          console.error('-error code', error.code);
+        }
+      }
+
+      document.addEventListener('DOMContentLoaded', init);
+      //document.addEventListener('DOMContentLoaded', async () => {
+      //  try {
+      //    const ui = await UiExtension.register();
+      //    const brDocument = await ui.document.get();
+      //    const value = await ui.document.field.getValue();
+
+      //    "showFieldValue(value);
+      //    "initSetFieldValueButton(ui, brDocument.mode);
+
+      //  } catch (error) {
+      //    console.log('failed to register extension', error.message);
+      //    console.log('- error code: ', error.code);
+      //  };
+     // };
+      })();
+    </script>
+
+  </body>
+</html>
