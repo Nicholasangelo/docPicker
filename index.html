@@ -75,7 +75,7 @@
     <script type="text/javascript">
       (function() {
       const gallery = document.querySelector('.gallery');
-      const toggleGallery = () => gallery.classList.contains('-hidden') ? gallery.classList.remove('-hidden') : galler.classList.add('-hidden');
+      const toggleGallery = () => gallery.classList.contains('-hidden') ? gallery.classList.remove('-hidden') : gallery.classList.add('-hidden');
 
       const openDialog = async () => {
         try {
@@ -84,10 +84,10 @@
             url: './dialog.html',
           };
 
-          const selected = await document.ui.dialog.open(dialogOptions);
+          const selected = await ui.dialog.open(dialogOptions);
 
           if (selected) {
-            await document.ui.field.setValue(JSON.stringify(selected));
+            await ui.field.setValue(JSON.stringify(selected));
 
             //setState((state) => ({ ...state, data: selected }));
           }
@@ -98,7 +98,7 @@
       }
 
       const cancelSelect = async () => {
-        await document.ui.field.setValue(null);
+        await ui.field.setValue(null);
       }
 
       const toggleDialog = () => {
