@@ -76,16 +76,20 @@
                 imageDiv.dataset.id = d.id;
                 imageDiv.innerHTML = `<img height='300'  width='300' src=${d.urls.thumb} />`
                 imageContainer.appendChild(imageDiv);
-                imageDiv.addEventListener('click', (e) =>{
-                  if (selected) {
-                    ui.field.setValue(JSON.stringify(selected));
-                  }
+                imageDiv.addEventListener('click', (e) => {
+                  addItem()
                 })
               } else {
                 return;
               };
             })
           })
+        }
+        
+        const addItem = (item) => {
+          const items = [];
+          items.push(item)
+          ui.dialog.close(items);
         }
 
       async function init() {
