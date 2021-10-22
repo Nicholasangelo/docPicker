@@ -93,7 +93,7 @@
 
           if (selected) {
             await ui.document.field.setValue(JSON.stringify(selected));
-
+console.log('selected', selected)
             //setState((state) => ({ ...state, data: selected }));
           }
         } catch (err) {
@@ -150,7 +150,8 @@
           previewBox.innerHTML = '';
 
           const image = deserialize(ui.document.field.getValue());
-
+console.log('des-image', image)
+console.log('mode', mode)
           if (mode === 'compare') {
             const compare = deserialize(ui.document.field.getCompareValue());
             if (compare === image && image !== '') makeThumbnail(ImageActions.None, container, image);
