@@ -149,10 +149,10 @@
         const previewBox = document.querySelector('.selected-assets');
           previewBox.innerHTML = '';
 
-          const image = deserialize(await ui.document.field.getValue());
+          const image = deserialize(ui.document.field.getValue());
 
           if (mode === 'compare') {
-            const compare = deserialize(await ui.document.field.getCompareValue());
+            const compare = deserialize(ui.document.field.getCompareValue());
             if (compare === image && image !== '') makeThumbnail(ImageActions.None, container, image);
             else {
               if (compare !== '') makeThumbnail(ImageActions.Removed, container, compare);
