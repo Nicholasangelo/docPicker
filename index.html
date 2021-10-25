@@ -134,15 +134,17 @@
         }
       }
 
-      const updatePreview = () => {
+      const updatePreview = async () => {
         const previewBox = document.querySelector('.selected-assets');
           previewBox.innerHTML = '';
 
-          const image = deserialize(await ui.document.field.getValue());
+          const docFieldValue = await ui.document.field.getValue();
+          const image = deserialize(docFieldValue);
 console.log('des-image', image)
 console.log('mode', mode)
           if (mode === 'compare') {
-            const compare = deserialize(await ui.document.field.getCompareValue());
+            const docFieldValueCompare = await ui.document.field.getCompareValue();
+            const compare = deserialize(docFieldValueCompare);
             if (compare === image && image !== '') makeThumbnail(ImageActions.None, container, image);
             else {
               if (compare !== '') makeThumbnail(ImageActions.Removed, container, compare);
