@@ -126,7 +126,7 @@
           const currentValue = await ui.document.field.getValue();
           options.value = currentValue;
           const newValue = await ui.dialog.open(options);
-          await ui.document.field.setValue(JSON.stringify(newValue));
+          await ui.document.field.setValue(newValue);
           await updatePreview();
         } catch (err) {
           if (err.code === 'DialogCanceled') return;
