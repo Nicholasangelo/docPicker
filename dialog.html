@@ -90,7 +90,7 @@
           const items = [];
           items.push(item)
           console.log('items ', items)
-          ui.dialog.close(items);
+          ui.dialog.close(JSON.stringify(items));
         }
 
       async function init() {
