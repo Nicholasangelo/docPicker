@@ -139,6 +139,7 @@
           previewBox.innerHTML = '';
 
           const docFieldValue = await ui.document.field.getValue();
+console.log(ui.document.field)
           console.log(docFieldValue)
           const image = deserialize(docFieldValue);
 console.log('des-image', image)
