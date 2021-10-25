@@ -77,7 +77,7 @@
                 imageDiv.innerHTML = `<img height='300'  width='300' src=${d.urls.thumb} />`
                 imageContainer.appendChild(imageDiv);
                 imageDiv.addEventListener('click', (e) => {
-                  addItem()
+                  addItem(e.target)
                 })
               } else {
                 return;
@@ -89,7 +89,7 @@
         const addItem = (item) => {
           const items = [];
           items.push(item)
-          console.log(items)
+          console.log('items ', items)
           ui.dialog.close(items);
         }
 
