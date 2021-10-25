@@ -73,20 +73,53 @@
 
     <script src="https://unpkg.com/@bloomreach/ui-extension@14.4.0/dist/ui-extension.min.js"></script>
     <script type="text/javascript">
-      (function(ui, mode) {
+      ((ui, mode) => {
       const gallery = document.querySelector('.gallery');
-      const toggleGallery = () => gallery.classList.contains('-hidden') ? gallery.classList.remove('-hidden') : gallery.classList.add('-hidden');
+      // const toggleGallery = () => gallery.classList.contains('-hidden') ? gallery.classList.remove('-hidden') : gallery.classList.add('-hidden');
       const ImageActions = {
         Added: 'added',
         Removed: 'removed',
         None: 'none',
       };
       
-      const dialogOptions = {
+      const deserialize = (value) => {
+        return (value && JSON.parse(value)) || '';
+      }
+      
+      const serialize = (value) => {
+        return value.length ? JSON.stringify(value) : '';
+      }
+
+      async function init() {
+        try {
+        ui = await UiExtension.register();
+          ({ mode } = await ui.document.get());
+          toggleDialog();
+          createGalleryView();
+        } catch(error) {
+          console.error('failed to register extension', error.message);
+          console.error('-error code', error.code);
+        }
+      }
+
+      const toggleDialog = () => {
+        const toggleBtn = document.querySelector('#toggle-dialog');
+        if (mode !== 'edit') {
+          toggleBtn.style.display = 'none';
+          return;
+        }
+        
+        const dialogOptions = {
         title: 'filePicker',
         url: './dialog.html',
         value: '',
       };
+
+      toggleBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      openDialog(dialogOptions);
+      })  
+    }
         
       const openDialog = async (options) => {
         try {
@@ -101,58 +134,15 @@
         }
       }
 
-      const deserialize = (value) => {
-        return (value && JSON.parse(value)) || '';
-      }
-      
-      const serialize = (value) => {
-        return value.length ? JSON.stringify(value) : '';
-      }
-      
-      
-      const cancelSelect = async () => {
-        await ui.document.field.setValue(null);
-      }
-
-      const toggleDialog = () => {
-        const toggleBtn = document.querySelector('#toggle-dialog');
-        toggleBtn.addEventListener('click', (e) => {
-          e.preventDefault();
-          openDialog(dialogOptions);
-        })
-      }
-
-      const createGalleryView = () => {
-        if (gallery) {
-      fetch('https://api.unsplash.com/photos?client_id=d3OVNNPZ5qCwRx4FNLivfnuODMLoka9LZ7o0jNCpVjM')
-        .then(response => {
-          return response.json();
-        })
-        .then(data => {
-          data.forEach((d, i) => {
-            if (i < 10) {
-              const imageContainer = document.querySelector('.asset-list');
-              const imageDiv = document.createElement('div');
-              imageDiv.dataset.id = d.id;
-              imageDiv.innerHTML = `<img height='300'  width='300' src=${d.urls.thumb} />`
-              imageContainer.appendChild(imageDiv);
-            } else {
-              return;
-            };
-          })
-        })
-        }
-      }
-
-        const updatePreview = () => {
+      const updatePreview = () => {
         const previewBox = document.querySelector('.selected-assets');
           previewBox.innerHTML = '';
 
-          const image = deserialize(ui.document.field.getValue());
+          const image = deserialize(await ui.document.field.getValue());
 console.log('des-image', image)
 console.log('mode', mode)
           if (mode === 'compare') {
-            const compare = deserialize(ui.document.field.getCompareValue());
+            const compare = deserialize(await ui.document.field.getCompareValue());
             if (compare === image && image !== '') makeThumbnail(ImageActions.None, container, image);
             else {
               if (compare !== '') makeThumbnail(ImageActions.Removed, container, compare);
@@ -187,21 +177,37 @@ console.log('mode', mode)
 
           container.appendChild(img);
         }
-  
+      
+      const cancelSelect = async () => {
+        await ui.document.field.setValue(null);
+      }
+
+      const createGalleryView = () => {
+        if (gallery) {
+      fetch('https://api.unsplash.com/photos?client_id=d3OVNNPZ5qCwRx4FNLivfnuODMLoka9LZ7o0jNCpVjM')
+        .then(response => {
+          return response.json();
+        })
+        .then(data => {
+          data.forEach((d, i) => {
+            if (i < 10) {
+              const imageContainer = document.querySelector('.asset-list');
+              const imageDiv = document.createElement('div');
+              imageDiv.dataset.id = d.id;
+              imageDiv.innerHTML = `<img height='300'  width='300' src=${d.urls.thumb} />`
+              imageContainer.appendChild(imageDiv);
+            } else {
+              return;
+            };
+          })
+        })
+        }
+      }
+
         const removeImage = async () => {
           await ui.document.field.setValue('');
         }
-      async function init() {
-        try {
-        ui = await UiExtension.register();
-          ({ mode } = ui.document.get());
-          toggleDialog();
-          createGalleryView();
-        } catch(error) {
-          console.error('failed to register extension', error.message);
-          console.error('-error code', error.code);
-        }
-      }
+     
 
       document.addEventListener('DOMContentLoaded', init);
       //document.addEventListener('DOMContentLoaded', async () => {
