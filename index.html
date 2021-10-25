@@ -145,15 +145,15 @@ console.log('mode', mode)
           if (mode === 'compare') {
             const docFieldValueCompare = await ui.document.field.getCompareValue();
             const compare = deserialize(docFieldValueCompare);
-            if (compare === image && image !== '') makeThumbnail(ImageActions.None, container, image);
+            if (compare === image && image !== '') makeThumbnail(ImageActions.None, previewBox, image);
             else {
-              if (compare !== '') makeThumbnail(ImageActions.Removed, container, compare);
-              if (image !== '') makeThumbnail(ImageActions.Added, container, image);
+              if (compare !== '') makeThumbnail(ImageActions.Removed, previewBox, compare);
+              if (image !== '') makeThumbnail(ImageActions.Added, previewBox, image);
             }
             return;
           }
 
-          if (image !== '') makeThumbnail(ImageActions.None, container, image);
+          if (image !== '') makeThumbnail(ImageActions.None, previewBox, image);
         }
 
         const makeThumbnail = (action, container, image) => {
