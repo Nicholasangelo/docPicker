@@ -81,21 +81,20 @@
         Removed: 'removed',
         None: 'none',
       };
+      
+      const dialogOptions = {
+        title: 'filePicker',
+        url: './dialog.html',
+        value: '',
+      };
         
-      const openDialog = async () => {
+      const openDialog = async (options) => {
         try {
-          const dialogOptions = {
-            title: 'filePicker',
-            url: './dialog.html',
-          };
-
-          const selected = await ui.dialog.open(dialogOptions);
-
-          if (selected) {
-            await ui.document.field.setValue(JSON.stringify(selected));
-console.log('selected', selected)
-            //setState((state) => ({ ...state, data: selected }));
-          }
+          const currentValue = await ui.document.field.getValue();
+          options.value = currentValue;
+          const newValue = await ui.dialog.open(options);
+          await ui.document.field.setValue(newValue);
+          await updatePreview();
         } catch (err) {
           if (err.code === 'DialogCanceled') return;
           console.error('Error after opening dialog ', err.code, err.message);
