@@ -68,15 +68,14 @@
       </div>
       <div class="dialog">
         <button id="toggle-dialog">Select assets</button>
-        <div class="selected-assets"></div>
+        <div id="selected-assets"></div>
     </div>
 
     <script src="https://unpkg.com/@bloomreach/ui-extension@14.4.0/dist/ui-extension.min.js"></script>
     <script type="text/javascript">
       ((ui, mode) => {
       const gallery = document.querySelector('.gallery');
-      // const toggleGallery = () => gallery.classList.contains('-hidden') ? gallery.classList.remove('-hidden') : gallery.classList.add('-hidden');
-      const ImageActions = {
+      const AssetActions = {
         Added: 'added',
         Removed: 'removed',
         None: 'none',
@@ -95,7 +94,6 @@
         ui = await UiExtension.register();
           ({ mode } = await ui.document.get());
           toggleDialog();
-          createGalleryView();
         } catch(error) {
           console.error('failed to register extension', error.message);
           console.error('-error code', error.code);
@@ -104,21 +102,22 @@
 
       const toggleDialog = () => {
         const toggleBtn = document.querySelector('#toggle-dialog');
-        if (mode !== 'edit') {
-          toggleBtn.style.display = 'none';
-          return;
-        }
+        // if (mode !== 'edit') {
+        //   toggleBtn.style.display = 'none';
+        //   return;
+        // }
         
         const dialogOptions = {
         title: 'digitalAssetPicker',
         url: './dialog.html',
         value: '',
-      };
-
-      toggleBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      openDialog(dialogOptions);
-      })  
+        };
+        if (mode === 'edit') {
+          toggleBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          openDialog(dialogOptions);
+        })
+      }  
     }
         
       const openDialog = async (options) => {
@@ -126,8 +125,9 @@
           const currentValue = await ui.document.field.getValue();
           options.value = currentValue;
           const newValue = await ui.dialog.open(options);
-          await ui.document.field.setValue(newValue);
+          await ui.document.field.setValue(JSON.stringify(newValue));
           await updatePreview();
+          await setAssetUsage(newValue, true);
         } catch (err) {
           if (err.code === 'DialogCanceled') return;
           console.error('Error after opening dialog ', err.code, err.message);
@@ -135,33 +135,114 @@
       }
 
       const updatePreview = async () => {
-        const previewBox = document.querySelector('.selected-assets');
-          previewBox.innerHTML = '';
+        const previewBox = document.getElementById('selected-assets');
+        // if (mode === 'edit') {
+        //   previewBox.innerHTML = '';
+        // }
 
-          const docFieldValue = await ui.document.field.getValue();
-console.log(ui.document.field)
-          console.log(docFieldValue)
-          const image = deserialize(docFieldValue);
-console.log('des-image', image)
-console.log('mode', mode)
+          const assets = deserialize(await ui.document.field.getValue());
+
           if (mode === 'compare') {
-            const docFieldValueCompare = await ui.document.field.getCompareValue();
-            const compare = deserialize(docFieldValueCompare);
-            if (compare === image && image !== '') makeThumbnail(ImageActions.None, previewBox, image);
-            else {
-              if (compare !== '') makeThumbnail(ImageActions.Removed, previewBox, compare);
-              if (image !== '') makeThumbnail(ImageActions.Added, previewBox, image);
-            }
+            const compare = deserialize(await ui.document.field.getCompareValue());
+            const removed = compare.filter(a => !assets.some(b => a.databaseId === b.databaseId));
+            const unchanged = compare.filter(a => assets.some(b => a.databaseId === b.databaseId));
+            const added = assets.filter(a => !compare.some(b => a.databaseId === b.databaseId));
+
+            addAssetDetails(AssetActions.Removed, previewBox, removed);
+            addAssetDetails(AssetActions.None, previewBox, unchanged);
+            addAssetDetails(AssetActions.Added, previewBox, added);
+
             return;
           }
 
-          if (image !== '') makeThumbnail(ImageActions.None, previewBox, image);
+          addAssetDetails(AssetActions.None, previewBox, assets);
+      }
+
+      function addAssetDetails(action, container, assets) {
+          assets.map(makeThumbnailAndInfo.bind(null, action, container))
+            .forEach(elt => { container.appendChild(elt); });
+        }
+
+        function makeThumbnailAndInfo(action, container, asset) {
+
+          const div = document.createElement('div');
+          div.className = 'asset';
+
+          const img = document.createElement('img');
+          img.className = 'asset-image';
+          switch (asset.type.toLowerCase()) {
+            case 'picture':
+            case 'video':
+              img.src = asset.url;
+              break;
+            default:
+              img.src = './no-preview.jpeg';
+          }
+          div.appendChild(img);
+
+          const title = document.createElement('h3');
+          title.className = 'asset-title';
+          title.innerText = 'Title: ' + (asset.title || 'unknown');
+          div.appendChild(title);
+
+          const id = document.createElement('p');
+          id.className = 'asset-id';
+          id.innerText = 'ID: ' + (asset.baseId || 'unknown');
+          div.appendChild(id);
+
+          if (mode === 'edit') {
+            div.classList.add('asset__editing');
+            div.addEventListener('click', async () => {
+              await removeAsset(asset);
+              container.removeChild(div);
+            });
+
+            return div;
+          }
+
+          // if (mode === 'compare') {
+          //   div.classList.add({
+          //     [AssetActions.Added]: 'asset__added',
+          //     [AssetActions.Removed]: 'asset__removed',
+          //     [AssetActions.None]: 'asset__unchanged',
+          //   }[action]);
+
+          //   return div;
+          // }
+
+          return div;
+        }
+
+        async function removeAsset({ databaseId }) {
+          const curvalue = deserialize(await ui.document.field.getValue());
+          const newassets = curvalue.filter(asset => databaseId !== asset.databaseId);
+          const assetremoved = curvalue.filter(asset => databaseId === asset.databaseId);
+
+          await ui.document.field.setValue(serialize(newassets));
+          await setAssetUsage(serialize(assetremoved), false);
+        }
+
+        async function setAssetUsage(assets, create = true) {
+          config_parsed = deserialize(ui.extension.config);
+          if (config_parsed.defaultDomain === undefined || config_parsed.clientId === undefined || config_parsed.clientSecret === undefined) {
+            return;
+          }
+          
+          const basedomain = config_parsed.defaultDomain + (config_parsed.defaultDomain.slice(-1) === '/' ? '' : '/');
+          const token = await getToken(basedomain, config_parsed.clientId, config_parsed.clientSecret);
+          const document = await ui.document.get();
+            
+          if (create) {
+            deserialize(assets).forEach(async asset => await createAssetUsage(token, asset.databaseId, basedomain, ui.baseUrl + '?uuid=' + document.id, document.urlName));
+          } else {
+            deserialize(assets).forEach(async asset => await deleteAssetUsage(token, asset.databaseId, basedomain, ui.baseUrl + '?uuid=' + document.id));
+          }
         }
 
         const makeThumbnail = (action, container, image) => {
           const img = document.createElement('img');
           img.className = 'image';
-          img.src = image.urls.thumb;
+          img.src = image.src;
 
           if (mode === 'edit') {
             img.classList.add('image__editing');
@@ -173,9 +254,9 @@ console.log('mode', mode)
 
           if (mode === 'compare') {
             img.classList.add({
-              [ImageActions.Added]: 'image__added',
-              [ImageActions.Removed]: 'image__removed',
-              [ImageActions.None]: 'image__unchanged',
+              [AssetActions.Added]: 'image__added',
+              [AssetActions.Removed]: 'image__removed',
+              [AssetActions.None]: 'image__unchanged',
             }[actions]);
           }
 
@@ -186,48 +267,11 @@ console.log('mode', mode)
         await ui.document.field.setValue(null);
       }
 
-      const createGalleryView = () => {
-        if (gallery) {
-      fetch('https://api.unsplash.com/photos?client_id=d3OVNNPZ5qCwRx4FNLivfnuODMLoka9LZ7o0jNCpVjM')
-        .then(response => {
-          return response.json();
-        })
-        .then(data => {
-          data.forEach((d, i) => {
-            if (i < 10) {
-              const imageContainer = document.querySelector('.asset-list');
-              const imageDiv = document.createElement('div');
-              imageDiv.dataset.id = d.id;
-              imageDiv.innerHTML = `<img height='300'  width='300' src=${d.urls.thumb} />`
-              imageContainer.appendChild(imageDiv);
-            } else {
-              return;
-            };
-          })
-        })
-        }
+      const removeImage = async () => {
+        await ui.document.field.setValue('');
       }
-
-        const removeImage = async () => {
-          await ui.document.field.setValue('');
-        }
      
-
       document.addEventListener('DOMContentLoaded', init);
-      //document.addEventListener('DOMContentLoaded', async () => {
-      //  try {
-      //    const ui = await UiExtension.register();
-      //    const brDocument = await ui.document.get();
-      //    const value = await ui.document.field.getValue();
-
-      //    "showFieldValue(value);
-      //    "initSetFieldValueButton(ui, brDocument.mode);
-
-      //  } catch (error) {
-      //    console.log('failed to register extension', error.message);
-      //    console.log('- error code: ', error.code);
-      //  };
-     // };
       })();
     </script>
 
