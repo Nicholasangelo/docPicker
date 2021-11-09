@@ -1,10 +1,6 @@
-
 <!doctype html>
 <html lang="en">
   <head>
-    <title>File Picker Stub</title>
-    <meta charset="utf-8"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1"/>
     <script type="text/javascript" src="https://unpkg.com/@bloomreach/ui-extension@14.2.1/dist/ui-extension.min.js"></script>
 
     <style>
@@ -22,9 +18,10 @@
         flex-direction: row;
         flex-wrap: wrap;
         justify-content: center;
+        margin: 20px;
       }
       .asset-list div {
-        padding: 6px;
+        padding: 6px; 
         transition: .5s;
         filter: drop-shadow(0px 0px 0px gray);
         overflow: hidden;
@@ -34,6 +31,33 @@
         filter: drop-shadow(0px 0px 15px darkgray);
         transform: scale(0.9);
         cursor: pointer;
+      }
+      .selected {
+        border: solid 4px blue;
+      }
+
+      input[type="text"] {
+        height: 30px;
+        font-size: 14px;
+      }
+      button {
+        color: #fff;
+        background-color: #147ac8;
+        border-width: 0;
+        border-radius: 4px;
+        height: 36px;
+        padding: 8px 12px;
+        font-size: 14px;
+        cursor: pointer;
+      }
+      .select-row {
+      bottom: 0px;
+      width: 100%;
+      background-color: white;
+      position: sticky;
+      justify-content: center;
+      padding: 10px;
+      box-shadow: -1px -2px 14px 0px lightgray;
       }
     </style>
   </head>
@@ -45,81 +69,138 @@
           <h1> PICKER </h1>
         </div>
       </div>
-      <div class="row">
+ <div class="row">
         <div class="col-md-6 col-md-offset-3">
-          <h2> Menu </h2>
+          <input type="text" id="input" onkeyup="handleInputSubmit(event)" />
+     <button onclick=handleSubmit()>Search</button>
         </div>
       </div>
       <div class="row">
         <section>
           <div class="asset-list">
-
+              
           </div>
         </section>
+      </div>
+      <div class="row select-row">
+        <button onClick=closeAndAdd() id="select-assets">Select Assets</button>
       </div>
     </div>
 
     <script src="https://unpkg.com/@bloomreach/ui-extension@14.4.0/dist/ui-extension.min.js"></script>
     <script type="text/javascript">
-      (function() {
+        const endpoint = '';
+        const user = 'Administrator';
+        const pass = '';
+        const headers = new Headers();
+        let selectedAssets = [];
 
-      const createGalleryView = () => {
-        fetch('https://api.unsplash.com/photos?client_id=d3OVNNPZ5qCwRx4FNLivfnuODMLoka9LZ7o0jNCpVjM')
-          .then(response => {
-            return response.json();
-          })
-          .then(data => {
-            data.forEach((d, i) => {
-              if (i < 10) {
-                const imageContainer = document.querySelector('.asset-list');
-                const imageDiv = document.createElement('div');
-                imageDiv.dataset.id = d.id;
-                imageDiv.innerHTML = `<img height='300'  width='300' src=${d.urls.thumb} />`
-                imageContainer.appendChild(imageDiv);
-                imageDiv.addEventListener('click', (e) => {
-                  addItem(e.detail)
-                })
-              } else {
-                return;
-              };
+        headers.set('Authorization', 'Basic ' + window.btoa(`${user}:${pass}`));
+        headers.set('X-NXproperties', '*');
+        headers.set('X-NXRepository', 'default');
+
+        const handleInputSubmit = (ev) => {
+          const { code, target: { value } } = ev;
+
+          if (code === 'Enter') {
+            handleSearch(value);
+          }
+        };
+
+        const handleSubmit = () => {
+          const input = document.querySelector('#input');
+          handleSearch(input.value);
+        };
+
+        const getSearchQuery = (value) => {
+          if (value === '') {
+            return '';
+          }
+
+          return `+AND+dc%3Atitle+LIKE+%27%25${value}%25%27`;
+        };
+
+        const handleSearch = (value) => {
+          const query = `?query=SELECT+%2A+FROM+Document+WHERE+ecm%3AprimaryType+%3D+%27Picture%27${getSearchQuery(value)}&pageSize=9`;
+          const api = `${endpoint}${query}`;
+          const imageContainer = document.querySelector('.asset-list');
+          imageContainer.innerHTML = '';
+
+          fetch(api, { headers })
+            .then(response => {
+              return response.json();
             })
-          })
-        }
-        
-        const addItem = (item) => {
-          const items = [];
-          items.push(item)
-          console.log('items ', items)
-          ui.dialog.close(JSON.stringify(items));
+            .then(data => {
+              if (!data.entries.length) {
+                imageContainer.textContent = 'No results found.';
+                return;
+              }
+
+              data.entries.forEach((item, i) => {
+                const { properties: { ['file:content']: content }, uid, type, title } = item;
+                const { data: src } = content;
+
+                if (i < 9) {
+                  const imageDiv = document.createElement('div');
+                  imageDiv.dataset.id = uid;
+                  imageDiv.innerHTML = `<img height='300' width='300' />`;
+                  imageContainer.appendChild(imageDiv);
+                  
+                  fetch(src, { headers })
+                    .then(response => {
+                      return response.blob();
+                    })
+                    .then(blob => {
+                      const image = document.querySelector(`[data-id='${uid}'] img`);
+                      image.src = window.URL.createObjectURL(blob);
+                      image.dataset.type = type;
+                      image.dataset.baseId = uid;
+                      image.dataset.title = title;
+                    });
+                    imageDiv.addEventListener('click', (e) => {
+                      e.target.classList.contains('selected') ? e.target.classList.remove('selected') : e.target.classList.add('selected'); 
+                      addItem(e.target);
+                    })
+                } else {
+                  return;
+                };
+              })
+            });
         }
 
-      async function init() {
+        const addItem = (item) => {
+          const itemDetail = {
+            type: item.dataset.type,
+            url: item.src,
+            baseId: item.dataset.baseId,
+            title: item.dataset.title,
+          }
+          selectedAssets.push(itemDetail)
+        }
+
+        const closeAndAdd = () => {
+          ui.dialog.close(selectedAssets); 
+        }
+
+        function deserialize(value) {
+          return (value && JSON.parse(value)) || [];
+        }
+
+        function serialize(value) {
+          return value.length ? JSON.stringify(value) : '';
+        }
+
+        async function init() {
         try {
         ui = await UiExtension.register();
           ({ mode } = ui.document.get());
-          createGalleryView();
+          handleSearch(''); 
         } catch(error) {
           console.error('failed to register extension', error.message);
           console.error('-error code', error.code);
         }
       }
-
       document.addEventListener('DOMContentLoaded', init);
-      //document.addEventListener('DOMContentLoaded', async () => {
-      //  try {
-      //    const ui = await UiExtension.register();
-      //    const brDocument = await ui.document.get();
-      //    const value = await ui.document.field.getValue();
-
-      //    "showFieldValue(value);
-      //    "initSetFieldValueButton(ui, brDocument.mode);
-
-      //  } catch (error) {
-      //    console.log('failed to register extension', error.message);
-      //    console.log('- error code: ', error.code);
-      //  };
-     // };
-      })();
     </script>
 
   </body>
